@@ -7,7 +7,7 @@
 
   <Targets>
     <Target>
-      <TargetName>SpaceInvaders</TargetName>
+      <TargetName>Connect4</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <TargetOption>
@@ -421,14 +421,14 @@
               <FilePath>.\random.s</FilePath>
             </File>
             <File>
-              <FileName>SpaceInvaders.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\SpaceInvaders.c</FilePath>
-            </File>
-            <File>
               <FileName>TExaS.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\TExaS.c</FilePath>
+            </File>
+            <File>
+              <FileName>Connect4.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Connect4.c</FilePath>
             </File>
           </Files>
         </Group>

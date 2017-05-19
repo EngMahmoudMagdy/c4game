@@ -21,7 +21,7 @@
   </DaveTm>
 
   <Target>
-    <TargetName>SpaceInvaders</TargetName>
+    <TargetName>Connect4</TargetName>
     <ToolsetNumber>0x4</ToolsetNumber>
     <ToolsetName>ARM-ADS</ToolsetName>
     <TargetOption>
@@ -260,7 +260,7 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>271</TopLine>
+      <TopLine>272</TopLine>
       <CurrentLine>277</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\startup.s</PathWithFileName>
@@ -276,7 +276,7 @@
       <Focus>0</Focus>
       <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>124</TopLine>
+      <TopLine>125</TopLine>
       <CurrentLine>130</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\Nokia5110.c</PathWithFileName>
@@ -306,13 +306,13 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>35</ColumnNumber>
+      <ColumnNumber>0</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>391</TopLine>
-      <CurrentLine>409</CurrentLine>
+      <TopLine>360</TopLine>
+      <CurrentLine>370</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>.\SpaceInvaders.c</PathWithFileName>
-      <FilenameWithoutPath>SpaceInvaders.c</FilenameWithoutPath>
+      <PathWithFileName>.\TExaS.c</PathWithFileName>
+      <FilenameWithoutPath>TExaS.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -322,13 +322,13 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>0</ColumnNumber>
+      <ColumnNumber>21</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>359</TopLine>
-      <CurrentLine>370</CurrentLine>
+      <TopLine>139</TopLine>
+      <CurrentLine>153</CurrentLine>
       <bDave2>0</bDave2>
-      <PathWithFileName>.\TExaS.c</PathWithFileName>
-      <FilenameWithoutPath>TExaS.c</FilenameWithoutPath>
+      <PathWithFileName>.\Connect4.c</PathWithFileName>
+      <FilenameWithoutPath>Connect4.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

@@ -208,14 +208,22 @@ void Nokia5110_OutChar(unsigned char data){
   }
 	 lcdwrite(DATA, 0x00);                 // blank vertical line padding
 	lcdwrite(DATA, 0x00);                 // blank vertical line padding
+	
+}
+
+
+void Nokia5110_OutChar2(unsigned char data){
+  int i;
+  lcdwrite(DATA, 0x00);                 // blank vertical line padding
+  for(i=0; i<5; i=i+1){
+    lcdwrite(DATA, ASCII[data - 0x20][i]);
+  }
+	 lcdwrite(DATA, 0x00);                 // blank vertical line padding
+	lcdwrite(DATA, 0x00);                 // blank vertical line padding
 	for(i=1; i<4; i=i+1){
     lcdwrite(DATA, ASCII['|' - 0x20][i]);
   }
- 
- 
-
 }
-
 
 //********Nokia5110_OutString*****************
 // Print a string of characters to the Nokia 5110 48x84 LCD.
@@ -290,15 +298,23 @@ void Nokia5110_SetCursor(unsigned char newX, unsigned char newY){
 }
 void Nokia5110_SetCursorChar(unsigned char newX, unsigned char newY,unsigned char data){
 	
-  if((newX > 11) || (newY > 5)){        // bad input
+  if((newX > 6) || (newY > 5)){        // bad input
     return;                             // do nothing
   }
-  // multiply newX by 7 because each character is 7 columns wide
-  lcdwrite(COMMAND, 0x80|(newX*13));     // setting bit 7 updates X-position
+	if(newX==6)
+	{
+	lcdwrite(COMMAND, 0x80|(newX*13));     // setting bit 7 updates X-position
   lcdwrite(COMMAND, 0x40|newY);         // setting bit 6 updates Y-position
 	Nokia5110_OutChar(data);
+	}
+	else
+	{
+  // multiply newX by 13 because each character is 13 columns wide
+  lcdwrite(COMMAND, 0x80|(newX*13));     // setting bit 7 updates X-position
+  lcdwrite(COMMAND, 0x40|newY);         // setting bit 6 updates Y-position
+	Nokia5110_OutChar2(data);
 	
-	
+	}
 }
 
 //********Nokia5110_Clear*****************

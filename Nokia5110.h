@@ -194,7 +194,7 @@ void Nokia5110_Init(void);
 // outputs: none
 // assumes: LCD is in default horizontal addressing mode (V = 0)
 void Nokia5110_OutChar(unsigned char data);
-
+void Nokia5110_OutChar2(unsigned char data);
 //********Nokia5110_OutString*****************
 // Print a string of characters to the Nokia 5110 48x84 LCD.
 // The string will automatically wrap, so padding spaces may

@@ -34,7 +34,7 @@
 // ******* Required Hardware I/O connections*******************
 // Slide pot pin 1 connected to ground
 // Slide pot pin 2 connected to PE2/AIN1
-// Slide pot pin 3 connected to +3.3V 
+// Slide pot pin 3 connected to +3.3V
 // fire button connected to PE0
 // special weapon fire button connected to PE1
 // 8*R resistor DAC bit 0 on PB0 (least significant bit)
@@ -72,13 +72,8 @@
 #include "Nokia5110.h"
 #include "Random.h"
 #include "TExaS.h"
-
-void DisableInterrupts(void); // Disable interrupts
-void EnableInterrupts(void);  // Enable interrupts
-void Timer2_Init(unsigned long period);
-void Delay100ms(unsigned long count); // time delay in 0.1 seconds
-unsigned long TimerCount;
-unsigned long Semaphore;
+#include <string.h>
+#include <stdlib.h>
 
 
 // *************************** Images ***************************
@@ -87,24 +82,57 @@ unsigned long Semaphore;
 #define BOARD_ROWS 6
 #define BOARD_COLS 7
 
+const unsigned char logo1[] ={
+ 0x42, 0x4D, 0x4A, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x76, 0x00, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x23, 0x00, 0x00, 0x00, 0x01, 0x00, 0x04, 0x00, 0x00, 0x00,
+ 0x00, 0x00, 0xD4, 0x03, 0x00, 0x00, 0xC4, 0x0E, 0x00, 0x00, 0xC4, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x80,
+ 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x80, 0x00, 0x00, 0x80, 0x80, 0x80, 0x00, 0xC0, 0xC0, 0xC0, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0xFF,
+ 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x88, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x88, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x88, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x88, 0x80, 0x00, 0x00, 0x07, 0x77, 0x70, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+ 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x88, 0x80, 0x00, 0x00, 0x08, 0xF8, 0xF7, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+ 0x00, 0x08, 0x88, 0x80, 0x00, 0x00, 0x88, 0x88, 0x88, 0x00, 0x03, 0x00, 0x00, 0x08, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x88, 0x88,
+ 0x88, 0x00, 0x88, 0x88, 0x8F, 0x00, 0x8F, 0xF7, 0x00, 0x0F, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x88, 0x88, 0x88, 0x80, 0x78, 0x88,
+ 0xFF, 0x07, 0xFF, 0xFF, 0x00, 0x08, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x88, 0x88, 0x88, 0x80, 0x07, 0x8F, 0xF0, 0x07, 0xF8, 0x7F,
+ 0x00, 0x88, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x88, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0xF7, 0x0F, 0x00, 0x88, 0x30, 0x88,
+ 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x88, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0xF7, 0x08, 0x00, 0x88, 0x88, 0x8F, 0x70, 0x00, 0x00, 0x00,
+ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x88, 0x88, 0x00, 0x00, 0x00, 0x07, 0x88, 0x70, 0x0F, 0xF0, 0x08, 0x08, 0x80, 0x0F, 0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+ 0x00, 0x00, 0x00, 0x00, 0x00, 0x88, 0x88, 0x80, 0x00, 0x00, 0x78, 0x88, 0x88, 0x0F, 0xF0, 0x0F, 0x08, 0x80, 0x07, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+ 0x00, 0x88, 0x88, 0x88, 0x88, 0x00, 0xFF, 0x88, 0x8F, 0x00, 0x00, 0x08, 0x08, 0x80, 0x07, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x88, 0x88,
+ 0x88, 0x00, 0x88, 0x88, 0xF8, 0x00, 0x00, 0x00, 0x08, 0x88, 0x7F, 0x70, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x88,
+ 0xF7, 0x00, 0x00, 0x00, 0x00, 0x88, 0x88, 0x70, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x77, 0x70, 0x00, 0x00, 0x00,
+ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x28, 0x87, 0x70, 0x00, 0x00, 0x00, 0x00, 0x08, 0x80, 0x07, 0x07, 0x70, 0x08, 0x70,
+ 0x7F, 0x8F, 0x70, 0x07, 0x78, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x78, 0x88, 0x88, 0xF8, 0x70, 0x00, 0x00, 0x00, 0x08, 0x80, 0x08, 0x07, 0x80, 0x88, 0x70, 0x7F, 0x87, 0x70, 0x88,
+ 0x88, 0x80, 0x00, 0xF7, 0x00, 0x00, 0x00, 0x00, 0x07, 0xFF, 0xFF, 0x77, 0x78, 0x70, 0x00, 0x88, 0x73, 0x0F, 0x80, 0x88, 0x07, 0x70, 0x88, 0x70, 0x78, 0x00, 0x08, 0xF8, 0x77, 0x80, 0x00, 0xF7,
+ 0x00, 0x00, 0x00, 0x00, 0x07, 0xF8, 0x87, 0x00, 0x07, 0x70, 0x08, 0x88, 0x88, 0x08, 0x88, 0x88, 0x07, 0x78, 0x88, 0x70, 0x7F, 0x88, 0x08, 0xF7, 0x00, 0x00, 0x00, 0xF7, 0x00, 0x00, 0x00, 0x00,
+ 0x77, 0x88, 0x87, 0x00, 0x00, 0x70, 0x88, 0x88, 0x88, 0x08, 0x88, 0x88, 0x07, 0x88, 0x87, 0x70, 0x7F, 0xF8, 0x08, 0xF7, 0x00, 0x00, 0x00, 0xF7, 0x00, 0x00, 0x00, 0x00, 0x68, 0x88, 0x70, 0x00,
+ 0x00, 0x00, 0x88, 0x88, 0x88, 0x08, 0x88, 0x88, 0x07, 0x88, 0x00, 0x70, 0x88, 0x70, 0x08, 0xF7, 0x00, 0x20, 0x00, 0xF7, 0x00, 0x00, 0x00, 0x00, 0x68, 0x88, 0x70, 0x00, 0x00, 0x00, 0x08, 0x88,
+ 0x87, 0x08, 0x88, 0x08, 0x08, 0x87, 0x00, 0x80, 0xF8, 0x77, 0x08, 0xF7, 0x33, 0x00, 0x08, 0xF8, 0x70, 0x00, 0x00, 0x00, 0x68, 0x88, 0x70, 0x00, 0x00, 0x00, 0x00, 0xF8, 0x00, 0x08, 0x80, 0x08,
+ 0x07, 0xF7, 0x03, 0x80, 0x7F, 0x88, 0x00, 0xFF, 0x78, 0x00, 0x8F, 0xFF, 0xF8, 0x00, 0x00, 0x00, 0x78, 0x88, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x08, 0x00, 0x80, 0x00, 0x00,
+ 0x8F, 0xFF, 0x70, 0x8F, 0xFF, 0x00, 0xFF, 0x88, 0xF7, 0x00, 0x00, 0x00, 0x08, 0x8F, 0xF7, 0x00, 0x06, 0x70, 0x00, 0x08, 0x70, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x77, 0x00, 0x00,
+ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xFF, 0xF7, 0x00, 0x07, 0x70, 0x78, 0x8F, 0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+ 0x00, 0x00, 0x00, 0x00, 0x07, 0xFF, 0x8E, 0x70, 0x68, 0x00, 0x78, 0x88, 0x88, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+ 0x00, 0x0F, 0x8E, 0x88, 0xF8, 0x00, 0x78, 0x88, 0x88, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x78, 0x87,
+ 0x70, 0x00, 0x7F, 0x88, 0x8F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0xFF,
+ 0x84, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF,
+
+};
+
+
 void printBoard(char *board);
 int takeTurn(char *board, int player, const char*);
+int takeTurnRemote(char *board, int player, const char*);
+int takeTurnAI(char *board, int player, const char*);
+int changeBoard(char *board,int player , const char *PIECES , int col );
 int checkWin(char *board);
 int checkFour(char *board, int, int, int, int);
 int horizontalCheck(char *board);
 int verticalCheck(char *board);
 int diagonalCheck(char *board);
-
-/*
-void Draw(int dis){
-	Nokia5110_ClearBuffer();
-	Nokia5110_PrintBMP(0, ENEMY10H - 1 + dis, SmallEnemy10PointA, 0);
-  Nokia5110_PrintBMP(16, ENEMY10H - 1 + dis, SmallEnemy20PointA, 0);
-  Nokia5110_PrintBMP(32, ENEMY10H - 1 + dis, SmallEnemy20PointA, 0);
-  Nokia5110_PrintBMP(48, ENEMY10H - 1 + dis, SmallEnemy30PointA, 0);
-  Nokia5110_PrintBMP(64, ENEMY10H - 1 + dis, SmallEnemy30PointA, 0);
-  Nokia5110_DisplayBuffer();     // draw buffer
-}*/
+void Delay100ms(unsigned long count); // time delay in 0.1 seconds
 
 
 #define GPIO_PORTF_DATA_R       (*((volatile unsigned long *)0x400253FC))
@@ -119,62 +147,232 @@ void Draw(int dis){
 #define SYSCTL_RCGC2_R          (*((volatile unsigned long *)0x400FE108))
 #define SYSCTL_RCGC2_GPIOF      0x00000020  // port F Clock Gating Control
 
-// basic functions defined at end of startup.s
-void DisableInterrupts(void); // Disable interrupts
-void EnableInterrupts(void);  // Enable interrupts
+
 unsigned long SW1,SW2;  // input from PF4,PF0
 unsigned long Out;      // outputs to PF3,PF2,PF1 (multicolor LED)
 void PortF_Init(void);
-void Delay(void);
-void s0 (void) ; 
-int s1 (void) ;
-int s2 (void) ;
 
-int y = 0, f = 0 , i = 0 , j = 0 ;
-int turn, done = 0;
+void UARTB_init(void);
+char UARTB_InChar(void) ;
+void UARTB_OutChar( char data);
+void UARTB_outString(char* buffer) ;
+int selectMode(void); 
+void startingScreen(void);
+
+
+int r = 0 , rr = 0 , uturn = 0 , f = 0 , i = 0 , j = 0 ;
+int turn=0, done = 0;
 const char *PIECES = "XO";
-char board[BOARD_ROWS * BOARD_COLS];
-
+char board1[BOARD_ROWS * BOARD_COLS];
+unsigned int seed = 25 ; 
 
 void PortF_Init(void){ volatile unsigned long delay;
-  SYSCTL_RCGC2_R |= 0x00000020;     // 1) F clock
-  delay = SYSCTL_RCGC2_R;           // delay   
-  GPIO_PORTF_LOCK_R = 0x4C4F434B;   // 2) unlock PortF PF0  
-  GPIO_PORTF_CR_R = 0x1F;           // allow changes to PF4-0       
+  SYSCTL_RCGC2_R |= 0x00000020| 0x00000002;     // 1) B & F clock
+  delay = SYSCTL_RCGC2_R;           // delay
+  GPIO_PORTF_LOCK_R = 0x4C4F434B;   // 2) unlock PortF PF0
+  GPIO_PORTF_CR_R = 0x1F;           // allow changes to PF4-0
   GPIO_PORTF_AMSEL_R = 0x00;        // 3) disable analog function
-  GPIO_PORTF_PCTL_R = 0x00000000;   // 4) GPIO clear bit PCTL  
-  GPIO_PORTF_DIR_R = 0x0E;          // 5) PF4,PF0 input, PF3,PF2,PF1 output   
+  GPIO_PORTF_PCTL_R = 0x00000000;   // 4) GPIO clear bit PCTL
+  GPIO_PORTF_DIR_R = 0x0E;          // 5) PF4,PF0 input, PF3,PF2,PF1 output
   GPIO_PORTF_AFSEL_R = 0x00;        // 6) no alternate function
-  GPIO_PORTF_PUR_R = 0x11;          // enable pullup resistors on PF4,PF0       
-  GPIO_PORTF_DEN_R = 0x1F;          // 7) enable digital pins PF4-PF0        
+  GPIO_PORTF_PUR_R = 0x11;          // enable pullup resistors on PF4,PF0
+  GPIO_PORTF_DEN_R = 0x1F;          // 7) enable digital pins PF4-PF0
 }
 
-
-
 int main(void){
-  TExaS_Init(SSI0_Real_Nokia5110_Scope);  // set system clock to 80 MHz
+  //TExaS_Init(SSI0_Real_Nokia5110_Scope);  // set system clock to 80 MHz
   // initialization goes here
-
-	  PortF_Init();        // Call initialization of port PF4, PF3, PF2, PF1, PF0  
-		
+	int mode ; 
+	PortF_Init();        // Call initialization of port PF4, PF3, PF2, PF1, PF0
 	for(i = 0 ; i < BOARD_COLS*BOARD_ROWS;i++)
 	{
-		if(i>3*BOARD_COLS)
-		board[i] = '|';
-		else
-			board[i]='*';
+		board1[i] = ' ';
 	}
-		
-  EnableInterrupts();           // enable interrupts for the grader
-	Random_Init(1);
+	
   Nokia5110_Init();
-  Nokia5110_ClearBuffer();
-	Nokia5110_DisplayBuffer();      // draw buffer
-	printBoard(board);
+	UARTB_init();
+  Nokia5110_Clear();
+	
+	startingScreen();
+	
+	mode = selectMode(); 
+	
+	Nokia5110_Clear();
+	if(mode)
+	{
+	srand(seed);
+	r = (rand()%9)+'0';
+	UARTB_OutChar(r);
+	rr = UARTB_InChar();
+	
+	if(r<rr)
+	{
+		uturn = 1 ;
+	}
 
-  
-  
+	printBoard(board1);
+	for(turn = 0; turn < (BOARD_ROWS * BOARD_COLS) && !done; turn++){ // 42
+      
+		if(uturn)
+		{
+			do{
+         printBoard(board1);
+      }
+			while(!takeTurnRemote(board1, (turn) % 2, PIECES));
+			done = checkWin(board1);
+			turn++;
+			if(done) break;
+			do{
+         printBoard(board1);
+      }
+			while(!takeTurn(board1, (turn) % 2, PIECES));
+			done = checkWin(board1);
+		}
+		else
+		{
+      do{
+         printBoard(board1);
+      }
+			while(!takeTurn(board1, (turn) % 2, PIECES));
+			done = checkWin(board1);
+			turn++;
+			if(done) break;
+			do{
+         printBoard(board1);
+      }
+			while(!takeTurnRemote(board1, (turn) % 2, PIECES));
+			done = checkWin(board1);
+		}
+   }
+	printBoard(board1);
+	 if(turn == BOARD_ROWS * BOARD_COLS && !done){
+     Nokia5110_OutString("It's a tie!");
+   } else {
+     turn--;
+		 Nokia5110_Clear();
+		 Nokia5110_SetCursor(1,1);
+		Nokia5110_OutString("Player");
+		Nokia5110_SetCursor(8,1);
+		Nokia5110_OutString(turn%2==0?"X":"O");
+		 Nokia5110_SetCursor(3,2);
+		 Nokia5110_OutString("wins!");
+		 Nokia5110_SetCursor(1,4);
+		 Nokia5110_OutString("GAME OVER");
+   }
 
+	}
+	else
+	{
+		printBoard(board1);
+	for(turn = 0; turn < (BOARD_ROWS * BOARD_COLS) && !done; turn++){ 
+			do{
+         printBoard(board1);
+      }
+			while(!takeTurn(board1, (turn) % 2, PIECES));
+			done = checkWin(board1);
+			turn++;
+			if(done) break;
+			do{
+         printBoard(board1);
+      }
+			while(!takeTurnAI(board1, (turn) % 2, PIECES));
+			done = checkWin(board1);
+		}
+		
+   
+	printBoard(board1);
+	 if(turn == BOARD_ROWS * BOARD_COLS && !done){
+     Nokia5110_OutString("It's a tie!");
+   } else {
+     turn--;
+		 Nokia5110_Clear();
+		 Nokia5110_SetCursor(1,1);
+		Nokia5110_OutString("Player");
+		Nokia5110_SetCursor(8,1);
+		Nokia5110_OutString(turn%2==0?"X":"O");
+		 Nokia5110_SetCursor(3,2);
+		 Nokia5110_OutString("wins!");
+		 Nokia5110_SetCursor(1,4);
+		 Nokia5110_OutString("GAME OVER");
+   }
+			
+	}
+	
+}
+void startingScreen()
+{
+	int w; 
+	Nokia5110_SetCursor(0,0);
+	Nokia5110_ClearBuffer();
+	Nokia5110_PrintBMP(10, 35, logo1, 2);
+	Nokia5110_DisplayBuffer();
+	Nokia5110_SetCursor(0,5);
+	Nokia5110_OutString("Welcome :D!");	
+	Delay100ms(40);
+	for(w=0 ; w<7 ; w++)
+	{
+		Nokia5110_SetCursor(0,w);
+		Nokia5110_OutString("           ");
+		Delay100ms(5);
+	}
+
+}
+
+int selectMode(){ // here is selecting if the mode is P1 VS AI or PI vs P2 
+	int k = 0 ; 
+	Nokia5110_SetCursor(0,0);
+	Nokia5110_OutString("select");
+	Nokia5110_SetCursor(7,0);
+	Nokia5110_OutString("mode");
+	Nokia5110_SetCursor(3,2);
+	Nokia5110_OutString("P1 VS AI");
+	Nokia5110_SetCursor(3,4);
+	Nokia5110_OutString("P1 VS P2");
+	Nokia5110_SetCursor(0,k+2);	
+	Nokia5110_OutString(">>");
+	
+	while(1)
+	{
+		SW1 = GPIO_PORTF_DATA_R&0x10;     // read PF4 into SW1
+		if(!SW1)
+		 {
+				while (!(GPIO_PORTF_DATA_R&0x10)){
+			 Delay100ms(1);
+				}
+				Nokia5110_SetCursor(0,k+2);	
+				Nokia5110_OutString("  ");				
+				k+=2;
+				if(k>2)
+					k=0;
+				Nokia5110_SetCursor(0,k+2);	
+				Nokia5110_OutString(">>");
+		 }
+	SW2 = GPIO_PORTF_DATA_R&0x01;     // read PF4 into SW2
+		 Delay100ms(1);
+		 if(!SW2)
+		 {
+			 while (!(GPIO_PORTF_DATA_R&0x01))
+			 {
+				 Delay100ms(1);
+				 seed++; 
+			 }
+			 Nokia5110_SetCursor(3,k+2);
+			 Nokia5110_OutString("        ");	
+			Delay100ms(5);			 
+			 Nokia5110_SetCursor(3,k+2);
+			 Nokia5110_OutString(k?"P1 VS P2":"P1 VS AI");	
+			Delay100ms(5);			 
+			 Nokia5110_SetCursor(3,k+2);
+			 Nokia5110_OutString("        ");		
+			 Delay100ms(5);
+			 Nokia5110_SetCursor(3,k+2);
+			 Nokia5110_OutString(k?"P1 VS P2":"P1 VS AI");		
+			 
+				break ;
+		 }
+		 seed++;
+	 }
+	return  k ; 
 }
 
 void printBoard(char *board){
@@ -183,38 +381,211 @@ void printBoard(char *board){
    for(row = 0; row < BOARD_ROWS; row++){
       for(col = 0; col < BOARD_COLS; col++){
 				Nokia5110_SetCursorChar( col ,row,board[BOARD_COLS*row+col]);
-				Delay100ms(3);
       }
    }
-	 //Nokia5110_DisplayBuffer();
+}
+
+
+	// take turn for the Kit player and PIECES can be X or O
+int takeTurn(char *board, int player, const char *PIECES){
+   int  col = 0;
+		int g ;
+   while(1){
+
+		SW1 = GPIO_PORTF_DATA_R&0x10;     // read PF4 into SW1
+		 Nokia5110_SetCursorChar( col ,0,PIECES[player]);
+		 if(!SW1)
+		 {
+				while (!(GPIO_PORTF_DATA_R&0x10)){
+			 Delay100ms(1);
+				}
+				col++;
+			 if(col>6)
+				 col = 0 ;
+			Nokia5110_SetCursorChar( col ,0,PIECES[player]);
+			  g = col==0?6:col-1;
+			 Nokia5110_SetCursorChar( g,0,board[g]);
+		 }
+		 SW2 = GPIO_PORTF_DATA_R&0x01;     // read PF4 into SW2
+		 Delay100ms(1);
+		 if(!SW2)
+		 {
+			 while (!(GPIO_PORTF_DATA_R&0x01))
+			 {
+				 Delay100ms(1);
+			 }
+				break ;
+		 }
+   }
+	 UARTB_OutChar(col+1+'0');
+   return changeBoard(board , player , PIECES , col );
+}
+//For AI 
+int takeTurnAI(char *board, int player, const char*PIECES)
+{
+	int col = 0;
+	
+	return changeBoard(board , player , PIECES , col );
+}
+//For UART move
+int takeTurnRemote(char *board, int player, const char *PIECES){
+  int col = 0;
+	col = UARTB_InChar();
+	col=col-1-'0' ;
+	if(col>6)
+	{
+		col = 0 ;
+	}
+   return changeBoard(board , player , PIECES , col );
+}
+int changeBoard(char *board,int player , const char *PIECES , int col  )
+{
+	int row ;
+   for(row = BOARD_ROWS - 1; row >= 0; row--){
+      if(board[BOARD_COLS * row + col] == ' '){
+         board[BOARD_COLS * row + col] = PIECES[player];
+         return 1;
+      }
+   }
+	 return 0 ;
+}
+
+int checkWin(char *board){
+    return (horizontalCheck(board) || verticalCheck(board) || diagonalCheck(board));
+}
+int checkFour(char *board, int a, int b, int c, int d){
+    return (board[a] == board[b] && board[b] == board[c] && board[c] == board[d] && board[a] != ' ');
+}
+
+int horizontalCheck(char *board){
+    int row, col, idx;
+    const int WIDTH = 1;
+
+    for(row = 0; row < BOARD_ROWS; row++){
+       for(col = 0; col < BOARD_COLS - 3; col++){
+          idx = BOARD_COLS * row + col;
+          if(checkFour(board, idx, idx + WIDTH, idx + WIDTH * 2, idx + WIDTH * 3)){
+             return 1;
+          }
+       }
+    }
+    return 0;
+
+}
+int verticalCheck(char *board){
+    int row, col, idx;
+    const int HEIGHT = 7;
+
+    for(row = 0; row < BOARD_ROWS - 3; row++){
+       for(col = 0; col < BOARD_COLS; col++){
+          idx = BOARD_COLS * row + col;
+          if(checkFour(board, idx, idx + HEIGHT, idx + HEIGHT * 2, idx + HEIGHT * 3)){
+              return 1;
+          }
+       }
+    }
+    return 0;
+
+}
+int diagonalCheck(char *board){
+   int row, col, idx, count = 0;
+   const int DIAG_RGT = 6, DIAG_LFT = 8;
+
+   for(row = 0; row < BOARD_ROWS - 3; row++){
+      for(col = 0; col < BOARD_COLS; col++){
+         idx = BOARD_COLS * row + col;
+         if((count <= 3 && checkFour(board, idx, idx + DIAG_LFT, idx + DIAG_LFT * 2, idx + DIAG_LFT * 3)) || (count >= 3 && checkFour(board, idx, idx + DIAG_RGT, idx + DIAG_RGT * 2, idx + DIAG_RGT * 3))){
+            return 1;
+         }
+         count++;
+      }
+      count = 0;
+   }
+   return 0;
 
 }
 
-// You can use this timer only if you learn how it works
-void Timer2_Init(unsigned long period){ 
-  unsigned long volatile delay;
-  SYSCTL_RCGCTIMER_R |= 0x04;   // 0) activate timer2
-  delay = SYSCTL_RCGCTIMER_R;
-  TimerCount = 0;
-  Semaphore = 0;
-  TIMER2_CTL_R = 0x00000000;    // 1) disable timer2A during setup
-  TIMER2_CFG_R = 0x00000000;    // 2) configure for 32-bit mode
-  TIMER2_TAMR_R = 0x00000002;   // 3) configure for periodic mode, default down-count settings
-  TIMER2_TAILR_R = period-1;    // 4) reload value
-  TIMER2_TAPR_R = 0;            // 5) bus clock resolution
-  TIMER2_ICR_R = 0x00000001;    // 6) clear timer2A timeout flag
-  TIMER2_IMR_R = 0x00000001;    // 7) arm timeout interrupt
-  NVIC_PRI5_R = (NVIC_PRI5_R&0x00FFFFFF)|0x80000000; // 8) priority 4
-// interrupts enabled in the main program after all devices initialized
-// vector number 39, interrupt number 23
-  NVIC_EN0_R = 1<<23;           // 9) enable IRQ 23 in NVIC
-  TIMER2_CTL_R = 0x00000001;    // 10) enable timer2A
+void UARTB_init()
+{
+
+	SYSCTL_RCGCUART_R |= (1<<1);
+	GPIO_PORTB_AFSEL_R |= 0x03;
+	GPIO_PORTB_DEN_R |= 0x03;
+	GPIO_PORTB_PCTL_R |= 0x11;
+	UART1_CTL_R &= ~(1<<0)  ;
+	UART1_IBRD_R = 8 ;
+	UART1_FBRD_R = 44 ;
+	// IBRD = int(16,000,000 / (16 * 115200)) = int(8.6805)
+  // FBRD = int(0.6805 * 64 + 0.5) = 44
+	UART1_LCRH_R = (3<<5);
+	UART1_CC_R = 0 ;
+	UART1_CTL_R |= (1<<0) | (1<<8)| (1<<9);
+
 }
-void Timer2A_Handler(void){ 
-  TIMER2_ICR_R = 0x00000001;   // acknowledge timer2A timeout
-  TimerCount++;
-  Semaphore = 1; // trigger
+ char UARTB_InChar(void){
+// as part of Lab 11, modify this program to use UART0 instead of UART1
+  while((UART1_FR_R&UART_FR_RXFE) != 0);
+  return(( char)(UART1_DR_R));
 }
+
+void UARTB_OutChar( char data){
+// as part of Lab 11, modify this program to use UART0 instead of UART1
+  while((UART1_FR_R&(1<<5)) != 0);
+  UART1_DR_R = data;
+}
+
+void UARTB_outString(char* buffer)
+{
+	while(*buffer != 0 )
+	{
+		UARTB_OutChar(*buffer) ;
+		buffer++;
+
+	}
+
+}
+/*
+
+void UARTB_init()
+{
+
+	SYSCTL_RCGCUART_R |= (1<<0);
+	GPIO_PORTA_AFSEL_R |= 0x03;
+	GPIO_PORTA_DEN_R |= 0x03;
+	GPIO_PORTA_PCTL_R |= 0x11;
+	UART0_CTL_R &= ~(1<<0)  ;
+	UART0_IBRD_R = 104 ;
+	UART0_FBRD_R = 11;
+	// IBRD = int(80,000,000 / (16 * 9600)) = int(43.4027)
+  // FBRD = int(0.4027 * 64 + 0.5) = 26
+	UART0_LCRH_R = (3<<5);
+	UART0_CC_R = 0 ;
+	UART0_CTL_R |= (1<<0) | (1<<8)| (1<<9);
+
+}
+ char UARTB_InChar(void){
+// as part of Lab 11, modify this program to use UART0 instead of UART1
+  while((UART0_FR_R&UART_FR_RXFE) != 0);
+  return(( char)(UART0_DR_R));
+}
+
+void UARTB_OutChar( char data){
+// as part of Lab 11, modify this program to use UART0 instead of UART1
+  while((UART0_FR_R&(1<<5)) != 0);
+  UART0_DR_R = data;
+}
+
+void UARTB_outString(char* buffer)
+{
+	while(*buffer != 0 )
+	{
+		UARTB_OutChar(*buffer) ;
+		buffer++;
+
+	}
+
+}*/
+
 void Delay100ms(unsigned long count){unsigned long volatile time;
   while(count){
     time = 72724;  // 0.1sec at 80 MHz
@@ -224,33 +595,3 @@ void Delay100ms(unsigned long count){unsigned long volatile time;
     count--;
   }
 }
-
-/*Nokia5110_PrintBMP(32, 47, PlayerShip0, 0); // player ship middle bottom
-  Nokia5110_PrintBMP(33, 47 - PLAYERH, Bunker0, 0);
-	while(1){
-		while(!(GPIO_PORTF_DATA_R&0x10)){
-			y = ENEMY10H + y == 47 ? 47 - ENEMY10H : y + 1;
-			Draw(y);
-			Delay100ms(1);
-		}
-		while(!(GPIO_PORTF_DATA_R&0x01)){
-			y = !y ? 0 : y - 1;
-			Draw(y);
-			Delay100ms(1);
-		}
-		
-	}*/
-//  Delay100ms(50);              // delay 5 sec at 50 MHz
-
-/*
-Nokia5110_Clear();
-  Nokia5110_SetCursor(1, 1);
-  Nokia5110_OutString("GAME OVER");
-  Nokia5110_SetCursor(1, 2);
-  Nokia5110_OutString("Nice try,");
-  Nokia5110_SetCursor(1, 3);
-  Nokia5110_OutString("Earthling!");
-  Nokia5110_SetCursor(2, 4);
-  Nokia5110_OutUDec(1234);
-  
-	*/
