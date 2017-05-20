@@ -5,3 +5,4 @@
 .\connect4.o: TExaS.h
 .\connect4.o: C:\Keil\ARM\ARMCC\bin\..\include\string.h
 .\connect4.o: C:\Keil\ARM\ARMCC\bin\..\include\stdlib.h
+.\connect4.o: C:\Keil\ARM\ARMCC\bin\..\include\math.h

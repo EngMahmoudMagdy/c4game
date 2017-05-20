@@ -74,6 +74,7 @@
 #include "TExaS.h"
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 
 // *************************** Images ***************************
@@ -163,8 +164,228 @@ void startingScreen(void);
 int r = 0 , rr = 0 , uturn = 0 , f = 0 , i = 0 , j = 0 ;
 int turn=0, done = 0;
 const char *PIECES = "XO";
-char board1[BOARD_ROWS * BOARD_COLS];
+char board1[(BOARD_ROWS * BOARD_COLS)+1];
 unsigned int seed = 25 ; 
+
+//AI CODE HERE : 
+int provocation = 0; // used to display a provocative screen
+char input[43]; // There are 42 places to play in the board .. this array represent them
+int PlayOut = 0;
+int EVA = 0;
+
+int winning(void);
+int GetValue(int t);
+int AIManager(void);
+int NegaMax(int Depth);
+
+void clean()
+{
+	int i; 
+    provocation = 0;
+    for(i = 0 ; i<= 43 ; i++)
+        input[i]=' ';
+}
+
+int GetValue(int column) // pass this function a column that you want to play in and it will return its value in input array ..
+{
+		int i; 
+		int n;
+    if(column > 7)
+        return 0;
+    
+    for(i = 0 ; i<= 6 ; i++)
+    {
+        if( input[column+7*i] == ' '  )
+        {
+            n = column+7*i;
+            break;
+        }
+    }
+    if ( n > 42 )
+        return 0;
+    return n;
+}
+
+
+int winning() // Winning algorithm
+{
+    int temp=0;
+		int i ;
+    for( i = 1 ; i<= 42 ; i++)
+    {
+        if(input[i] != ' ')
+        {
+            temp++;
+            if( i - floor((i-1)/7) * 7 <= 4  )
+                if( input[i] == input [i+1] && input[i] == input[i+2] && input[i] == input[i+3] )
+								{if(input[i] == 'X' )
+                        return 1 ;
+                    else
+                        return 2;}
+            if( i <= 21 )
+                if ( input[i] == input[i+7] && input[i] == input[i+14] && input[i] == input[i+21]  )
+								{if(input[i] == 'X' )
+                        return 1 ;
+                    else
+                        return 2;}
+            if( i - floor((i-1)/7) * 7 <= 4 && i<=18  )
+                if(input[i] == input[i+8] && input[i] == input[i+16] && input[i]==input[i+24])
+								{if(input[i] == 'X' )
+                        return 1 ;
+                    else
+                        return 2;}
+            if( i - floor((i-1)/7) * 7 >= 4 && i <= 21   )
+                if(input[i] == input[i+6] && input[i] == input[i+12] && input[i]==input[i+18])
+								{if(input[i] == 'X' )
+										{return 1 ;}
+                    else
+										{return 2;}}
+        }
+
+    }
+    if (temp == 42)
+        return 3;
+    return 0;
+}
+
+
+void PlayPosition(char XO) // Function that asks you to enter where you like to play
+{
+    int col , g;
+	
+    while(1)
+    {
+			SW1 = GPIO_PORTF_DATA_R&0x10;     // read PF4 into SW1
+		 Nokia5110_SetCursorChar( col ,0,XO);
+		 if(!SW1)
+		 {
+				while (!(GPIO_PORTF_DATA_R&0x10)){
+			 Delay100ms(1);
+				}
+				col++;
+			 if(col>6)
+				 col = 0 ;
+			Nokia5110_SetCursorChar( col ,0,XO);
+			  g = col==0?6:col-1;
+			 Nokia5110_SetCursorChar( g,0,input[g]);
+		 }
+		 SW2 = GPIO_PORTF_DATA_R&0x01;     // read PF4 into SW2
+		 Delay100ms(1);
+		 if(!SW2)
+		 {
+			 while (!(GPIO_PORTF_DATA_R&0x01))
+			 {
+				 Delay100ms(1);
+			 }
+				col=GetValue(col);
+        if( col != 0 )
+        {
+            input[col] = XO;
+            break ;
+        }
+		 }
+        
+        
+    }
+}
+
+int AIManager() // AI Algorithm
+{
+		int column; 
+		float temp;
+		int PlayNumber;
+    float chance[2] = {9999999 , 0 };
+    for( column = 1 ; column <= 7 ; column ++)
+    {
+        PlayOut = 0;
+        EVA=0;
+         PlayNumber = GetValue(column);
+        if( PlayNumber != 0 )
+        {
+
+            input[PlayNumber] = 'O';
+            if(winning()==2)
+               {
+                   input[PlayNumber]=' ';
+                   return PlayNumber ;
+               }
+             temp = -(100*NegaMax(1));
+            if(PlayOut != 0)
+                temp -= ((100*EVA)/PlayOut);
+            if(-temp >= 100)
+                provocation = 1;
+            if( chance[0] > temp  )
+            {
+                chance[0] = temp  ;
+                chance[1] = PlayNumber;
+            }
+             //  cout<<endl<<-temp<<"   "<<EVA << "   " <<PlayOut;
+            input[PlayNumber] = ' ';
+        }
+    }
+    return chance[1];
+}
+int NegaMax(int Depth) // MiniMax algorithm in NegaMax form
+{
+    char XO;
+		int column;
+    int PlayNumber[8] = {0,0,0,0,0,0,0,0}; // The values of the input[] for every column
+    int chance=0;
+    if(Depth % 2 != 0)
+        XO='X';
+    else
+        XO='O';
+    for( column = 1 ; column <= 7 ; column ++)
+        PlayNumber[column]=GetValue(column);
+    for( column = 1 ; column <= 7 ; column++)
+    {
+        if(PlayNumber[column] != 0)
+        {
+            input[PlayNumber[column]]=XO;
+            if( winning() != 0 )
+            {
+                PlayOut ++;
+                if(XO=='O')
+                    EVA ++;
+                else
+                    EVA --;
+                input[PlayNumber[column]]=' ';
+                return -1;
+            }
+            input[PlayNumber[column]]=' ';
+        }
+    }
+    if(Depth <= 6)
+    {
+
+        for( column = 1 ; column <= 7 ; column ++)
+        {
+            int temp=0;
+            if( PlayNumber[column] != 0 )
+            {
+                input[PlayNumber[column]]=XO;
+                if( winning() != 0 )
+                {
+                    PlayOut++;
+                    if(XO=='O')
+                        EVA++;
+                    else
+                        EVA--;
+                    input[PlayNumber[column]]=' ';
+                    return -1;
+                }
+                temp = NegaMax(Depth+1);
+                if(column == 1)
+                    chance = temp;
+                if(chance < temp)
+                    chance = temp;
+                input[PlayNumber[column]]=' ';
+            }
+        }
+    }
+    return -chance;
+}
+
 
 void PortF_Init(void){ volatile unsigned long delay;
   SYSCTL_RCGC2_R |= 0x00000020| 0x00000002;     // 1) B & F clock
@@ -184,23 +405,21 @@ int main(void){
   // initialization goes here
 	int mode ; 
 	PortF_Init();        // Call initialization of port PF4, PF3, PF2, PF1, PF0
-	for(i = 0 ; i < BOARD_COLS*BOARD_ROWS;i++)
+	for(i = 0 ; i < BOARD_COLS*BOARD_ROWS +1;i++)
 	{
 		board1[i] = ' ';
+		input[i]=' ';
 	}
 	
   Nokia5110_Init();
 	UARTB_init();
   Nokia5110_Clear();
-	
 	startingScreen();
-	
 	mode = selectMode(); 
-	
+	srand(seed);
 	Nokia5110_Clear();
 	if(mode)
 	{
-	srand(seed);
 	r = (rand()%9)+'0';
 	UARTB_OutChar(r);
 	rr = UARTB_InChar();
@@ -259,43 +478,48 @@ int main(void){
 		 Nokia5110_SetCursor(1,4);
 		 Nokia5110_OutString("GAME OVER");
    }
-
 	}
 	else
 	{
-		printBoard(board1);
-	for(turn = 0; turn < (BOARD_ROWS * BOARD_COLS) && !done; turn++){ 
-			do{
-         printBoard(board1);
-      }
-			while(!takeTurn(board1, (turn) % 2, PIECES));
-			done = checkWin(board1);
-			turn++;
-			if(done) break;
-			do{
-         printBoard(board1);
-      }
-			while(!takeTurnAI(board1, (turn) % 2, PIECES));
-			done = checkWin(board1);
-		}
-		
-   
-	printBoard(board1);
-	 if(turn == BOARD_ROWS * BOARD_COLS && !done){
-     Nokia5110_OutString("It's a tie!");
-   } else {
-     turn--;
-		 Nokia5110_Clear();
-		 Nokia5110_SetCursor(1,1);
-		Nokia5110_OutString("Player");
-		Nokia5110_SetCursor(8,1);
-		Nokia5110_OutString(turn%2==0?"X":"O");
-		 Nokia5110_SetCursor(3,2);
-		 Nokia5110_OutString("wins!");
-		 Nokia5110_SetCursor(1,4);
-		 Nokia5110_OutString("GAME OVER");
-   }
-			
+		int winningtemp ;
+		while(1)
+    {
+				printBoard(input);
+        input[AIManager()]='O';
+				printBoard(input);
+         winningtemp = winning();
+        if(winningtemp!=0)
+        {
+						Nokia5110_Clear();
+            if(winningtemp == 1)
+						{
+						  Nokia5110_SetCursor(1,1);
+							Nokia5110_OutString("Player");
+							Nokia5110_SetCursor(8,1);
+							Nokia5110_OutString(turn%2==0?"X":"O");
+						  Nokia5110_SetCursor(3,2);
+						  Nokia5110_OutString("wins!");
+						}
+            else if (winningtemp == 2)
+						{
+						  Nokia5110_SetCursor(1,1);
+							Nokia5110_OutString("Player");
+							Nokia5110_SetCursor(8,1);
+							Nokia5110_OutString(turn%2==0?"X":"O");
+						  Nokia5110_SetCursor(3,2);
+						  Nokia5110_OutString("wins!");
+						}
+            else if (winningtemp == 3)
+						{
+							Nokia5110_SetCursor(1,1);
+							Nokia5110_OutString("IT is TIE");
+						}
+						 Nokia5110_SetCursor(1,4);
+						 Nokia5110_OutString("GAME OVER");
+        }
+        else
+            PlayPosition('X');
+    }
 	}
 	
 }
@@ -504,7 +728,7 @@ int diagonalCheck(char *board){
    return 0;
 
 }
-
+//
 void UARTB_init()
 {
 
@@ -584,7 +808,8 @@ void UARTB_outString(char* buffer)
 
 	}
 
-}*/
+}
+//*/
 
 void Delay100ms(unsigned long count){unsigned long volatile time;
   while(count){
