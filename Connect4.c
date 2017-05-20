@@ -177,6 +177,7 @@ int winning(void);
 int GetValue(int t);
 int AIManager(void);
 int NegaMax(int Depth);
+void Board(void);
 
 void clean()
 {
@@ -204,6 +205,30 @@ int GetValue(int column) // pass this function a column that you want to play in
     if ( n > 42 )
         return 0;
     return n;
+}
+
+void Board() // Draw board
+{
+
+    int j = 42;
+		int i , k , h = 0 ;
+    for( i = 0 ; i<= 23 ; i++)
+    {		
+			 if(i%4!=0)
+        {
+            if( (i - 2) % 4 == 0)
+            {
+                j=42-(0.25*i+0.5)*6-((0.25*i+0.5)-1) ;
+                for(k = 0 ; k<=6 ; k++)
+                {
+                        Nokia5110_SetCursorChar(k,h,input[j]);
+                        j++;
+                }
+								h++;
+            }
+        }
+    }
+    
 }
 
 
@@ -414,7 +439,7 @@ int main(void){
   Nokia5110_Init();
 	UARTB_init();
   Nokia5110_Clear();
-	startingScreen();
+	//startingScreen();
 	mode = selectMode(); 
 	srand(seed);
 	Nokia5110_Clear();
@@ -484,9 +509,8 @@ int main(void){
 		int winningtemp ;
 		while(1)
     {
-				printBoard(input);
         input[AIManager()]='O';
-				printBoard(input);
+				Board();
          winningtemp = winning();
         if(winningtemp!=0)
         {
