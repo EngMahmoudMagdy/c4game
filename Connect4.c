@@ -198,7 +198,7 @@ int main(void){
   Nokia5110_Init();
 	UARTB_init();
   Nokia5110_Clear();
-	//startingScreen();
+	startingScreen();
 	mode = selectMode(); 
 	srand(seed);
 	Nokia5110_Clear();
@@ -441,12 +441,14 @@ int takeTurnAI(char *board, int player, const char*PIECES , int i )
 		}
 		else {
 			if(last >0 && last < 6)
-			{if(hasEmptyCol(board,last-1))
+			{	
+				if(hasEmptyCol(board,last-1))
 					col = last-1 ; 
 				else if(hasEmptyCol(board,last+1))
 					col = last+1; 
 				else if(hasEmptyCol(board,lastOne)&&lastOne>-1)
 					col = lastOne; 
+				
 			}
 		}
 	}
